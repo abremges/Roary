@@ -18,6 +18,8 @@ use Moose;
 use Bio::SeqIO;
 use File::Path qw(make_path);
 use File::Basename;
+use File::Copy;
+use File::Temp qw/ tempfile /;
 use Bio::Roary::Exceptions;
 use Bio::Roary::AnalyseGroups;
 use Bio::Tools::GFF;
@@ -117,16 +119,27 @@ sub _extracted_nucleotide_fasta_file_from_bed_filename {
     return join( '.', ( $self->output_filename, 'intermediate.extracted.fa' ) );
 }
 
-
-
 sub _create_nucleotide_fasta_file_from_gff {
     my ($self) = @_;
-    my $cmd =
-        'sed -n \'/##FASTA/,//p\' '
-      . $self->gff_file
-      . ' | grep -v \'##FASTA\' > '
-      . $self->_nucleotide_fasta_file_from_gff_filename;
-    system($cmd);
+    
+    open(my $input_fh, $self->gff_file);
+    open(my $output_fh, '>', $self->_nucleotide_fasta_file_from_gff_filename);
+    my $at_sequence = 0;
+    while(<$input_fh>)
+    {
+	    my $line = $_;
+	    if($line =~/^>/)
+	    {
+	    	$at_sequence = 1;
+	    }
+	    
+	    if($at_sequence == 1)
+	    {
+		    print {$output_fh} $line;
+	    }
+    }
+    close($input_fh);
+    close($output_fh);
 }
 
 sub _nucleotide_fasta_file_from_gff_filename {
@@ -154,9 +167,36 @@ sub _extract_nucleotide_regions {
     return $self->_extracted_nucleotide_fasta_file_from_bed_filename;
 }
 
+sub _cleanup_fasta {
+    my ($self,$infile) = @_;
+    
+    my($fh, $outfile) = tempfile();
+    return unless ( -e $infile );
+
+    open( my $in,  '<', $infile );
+    open( my $out, '>', $outfile );
+    while ( my $line = <$in> ) {
+        chomp $line;
+        $line =~ s/"//g if ( $line =~ /^>/ );
+	
+	if($line =~ /^(>[^:]+)/)
+	{
+		$line = $1;
+	}
+        print $out "$line\n";
+    }
+    close $in;
+    close $out;
+    
+    move( $outfile, $infile);
+    return $infile;
+}
+
+
 sub _build_fasta_file {
     my ($self) = @_;
-    return $self->_extract_nucleotide_regions;
+    my $fasta_filename  = $self->_extract_nucleotide_regions;
+    return $self->_cleanup_fasta($fasta_filename);
 }
 
 no Moose;

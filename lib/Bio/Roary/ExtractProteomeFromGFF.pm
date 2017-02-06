@@ -81,9 +81,25 @@ sub _unfiltered_output_filename {
 
 sub _create_nucleotide_fasta_file_from_gff {
     my ($self) = @_;
-    my $cmd = 'sed -n \'/##FASTA/,//p\' ' . $self->gff_file . ' | grep -v \'##FASTA\' > ' . $self->_nucleotide_fasta_file_from_gff_filename;
-    $self->logger->debug($cmd);
-    system($cmd);
+    
+    open(my $input_fh, $self->gff_file);
+    open(my $output_fh, '>', $self->_nucleotide_fasta_file_from_gff_filename);
+    my $at_sequence = 0;
+    while(<$input_fh>)
+    {
+	    my $line = $_;
+	    if($line =~/^>/)
+	    {
+	    	$at_sequence = 1;
+	    }
+	    
+	    if($at_sequence == 1)
+	    {
+		    print {$output_fh} $line;
+	    }
+    }
+    close($input_fh);
+    close($output_fh);
 }
 
 sub _extract_nucleotide_regions {
@@ -118,6 +134,11 @@ sub _cleanup_fasta {
     while ( my $line = <$in> ) {
         chomp $line;
         $line =~ s/"//g if ( $line =~ /^>/ );
+	
+	if($line =~ /^(>[^:]+)/)
+	{
+		$line = $1;
+	}
         print $out "$line\n";
     }
     close $in;

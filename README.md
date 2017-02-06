@@ -16,18 +16,26 @@ Theres are a number of dependancies required for Roary, with instructions specif
 * Ubuntu/Debian
 * CentOS/RedHat
 * Homebrew/Linuxbrew - OSX/Linux
-* Installing from source - OSX/Linux
+* Guix - Linux
 * Virtual Machine - OSX/Linux/Windows
+* Docker - OSX/Linux/Windows/Cloud
+* Installing from source - OSX/Linux
 
 If the installation fails please contact your system administrator. If you encounter a bug please let us know by emailing roary@sanger.ac.uk .
 
 ##Ubuntu/Debian
-All the dependancies can be installed using apt and cpanm (tested on Ubuntu 14.04). Root permissions are required.
+###Debian Testing
+```
+sudo apt-get install roary
+```
+
+###Ubuntu 14.04/16.04
+All the dependancies can be installed using apt and cpanm. Root permissions are required. Ubuntu 16.04 contains a package for Roary but it is frozen at v3.6.0.
 
 ```
 sudo apt-get install bedtools cd-hit ncbi-blast+ mcl parallel cpanminus prank mafft fasttree
 sudo cpanm -f Bio::Roary
-```   
+```
 
 ###Ubuntu 12.04
 Some of the software versions in apt are quite old so follow the instructions for [LinuxBrew](http://brew.sh/linuxbrew/) below.
@@ -44,12 +52,31 @@ brew install bedtools cd-hit blast mcl parallel prank mafft fasttree cpanm
 sudo cpanm -f Bio::Roary
 ```
 
+##GNU Guix
+Roary is not included in version in [Guix](https://www.gnu.org/software/guix) 0.11.0 so `guix pull` is currently required before installation.
+```
+guix pull
+guix package --install roary
+```
+
 ##Virtual Machine - OSX/Linux/Windows
 Roary wont run natively on Windows but we have created virtual machine which has all of the software setup, including Prokka, along with the test datasets from the paper. It is based on [Bio-Linux 8](http://environmentalomics.org/bio-linux/).  You need to first install [VirtualBox](https://www.virtualbox.org/), then load the virtual machine, using the 'File -> Import Appliance' menu option. The root password is 'manager'.
 
 ftp://ftp.sanger.ac.uk/pub/pathogens/pathogens-vm/pathogens-vm.latest.ova
 
 More importantly though, if your trying to do bioinformatics on Windows, your not going to get very far and you should seriously consider upgrading to Linux.
+
+##Docker - OSX/Linux/Windows/Cloud
+We have a docker container which gets automatically built from the latest version of Roary in Debian Med. To install it:
+
+```
+docker pull sangerpathogens/roary
+```
+
+To use it you would use a command such as this (substituting in your directories), where your GFF files are assumed to be stored in /home/ubuntu/data:
+```
+docker run --rm -it -v /home/ubuntu/data:/data sangerpathogens/roary roary -f /data /data/*.gff
+```
 
 ##Installing from source (advanced Linux users only)
 As a last resort you can install everything from source. This is for users with advanced Linux skills and we do not provide any support with this method since you have the skills to figure things out.
@@ -80,13 +107,14 @@ bedtools cd-hit blast mcl GNUparallel prank mafft fasttree
 ```
 
 ## Ancient systems and versions of perl
-The code will not work with perl 5.8 or below (pre-modern perl). If your running a very old verison of Linux, your also in trouble.
+The code will not work with perl 5.8 or below (pre-modern perl). We no longer test against 5.10 (released 2007). If your running a very old verison of Linux, your also in trouble.
 
 #Versions of software we test against
-* Perl 5.10, 5.14, 5.16, 5.18, 5.20
+* Perl 5.14, 5.16, 5.20, 5.24
 * cdhit 4.6.1
-* ncbi blast+ 2.2.30
+* ncbi blast+ 2.4.0
 * mcl 14-137
-* bedtools 2.20.1
+* bedtools 2.26.0
 * prank 130410
-* GNU parallel 20130922, 20141022, 20150122
+* GNU parallel 20130922, 20160722, 20150122
+* FastTree 2.1.9
